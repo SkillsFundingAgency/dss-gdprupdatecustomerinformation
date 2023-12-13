@@ -18,12 +18,14 @@ namespace NCS.DSS.GDPRUpdateCustomerInformation.Function
             _logger = logger;
         }
 
-        [FunctionName("GDPRIdentifyCustomers")]
-        public async Task Run([TimerTrigger("0 * * * * *")] TimerInfo myTimer)
+        // Currently runs once a year on 04/06 at 2AM
+        [FunctionName("GDPRUpdateCustomerInformation")]
+        public async Task RunTimer([TimerTrigger("0 0 2 6 4 *")] TimerInfo myTimer)
         {
             _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.UtcNow}");
 
-            await _IdentifyAndAnonymiseDataService.IdentifyCustomers();
+            //temporarily commented out to avoid db changes
+            //await _IdentifyAndAnonymiseDataService.AnonymiseData();
         }
     }
 }
