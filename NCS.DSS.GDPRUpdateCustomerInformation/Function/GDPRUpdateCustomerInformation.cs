@@ -20,7 +20,9 @@ namespace NCS.DSS.GDPRUpdateCustomerInformation.Function
 
         // Currently runs once a year on 04/06 at 2AM
         [FunctionName("GDPRUpdateCustomerInformation")]
-        public async Task RunTimer([TimerTrigger("0 0 2 6 4 *")] TimerInfo myTimer)
+        [Singleton]
+        [NoAutomaticTrigger]
+        public async Task Run(string input)
         {
             _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.UtcNow}");
 
