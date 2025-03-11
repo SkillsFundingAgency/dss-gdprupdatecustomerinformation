@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,8 +23,8 @@ namespace NCS.DSS.DataUtility
 
                 services.AddSingleton(s =>
                 {
-                    string cosmosConnectionString = Environment.GetEnvironmentVariable("CosmosDBConnectionString");
-                    return new CosmosClient(cosmosConnectionString);
+                    string cosmosDbEndpoint = Environment.GetEnvironmentVariable("CosmosDBEndpoint");
+                    return new CosmosClient(cosmosDbEndpoint, new DefaultAzureCredential());
                 });
 
                 services.Configure<LoggerFilterOptions>(options =>

@@ -20,7 +20,7 @@
         "azureSQLConnectionString": {
             "value": "__azureSQLConnectionString__"
         },
-        "cosmosDbEndpoint": {
+        "CosmosDbEndpoint": {
             "value": "__CosmosDbEndpoint__"
         },
         "cosmosDbKey": {

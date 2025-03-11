@@ -17,7 +17,7 @@
     "environmentName": {
       "type": "string"
     },
-    "cosmosDbEndpoint": {
+    "CosmosDbEndpoint": {
       "type": "string"
     },
     "cosmosDbKey": {
@@ -70,8 +70,8 @@
                 "cosmosDbKey": {
                   "value": "[parameters('cosmosDbKey')]"
                 },
-                "cosmosDbEndpoint": {
-                  "value": "[parameters('cosmosDbEndpoint')]"
+                "CosmosDbEndpoint": {
+                  "value": "[parameters('CosmosDbEndpoint')]"
                 },
                 "configEnvironmentName": {
                   "value": "[parameters('environmentName')]"
