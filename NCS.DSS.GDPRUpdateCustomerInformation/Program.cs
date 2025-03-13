@@ -23,6 +23,7 @@ namespace NCS.DSS.DataUtility
                 services.AddSingleton<IIdentifyAndAnonymiseDataService, IdentifyAndAnonymiseDataService>();
                 services.AddSingleton<IGenericDataService, GenericDataService>();
 
+                services.AddSingleton(s =>
                 {
                     string cosmosDbEndpoint = Environment.GetEnvironmentVariable("CosmosDBEndpoint");
                     return new CosmosClient(cosmosDbEndpoint, new DefaultAzureCredential());
