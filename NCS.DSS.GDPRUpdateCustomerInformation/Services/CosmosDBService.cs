@@ -22,7 +22,7 @@ namespace NCS.DSS.DataUtility.Services
         private const string SessionCosmosDb = "sessions";
         private const string SubscriptionsCosmosDb = "subscriptions";
         private const string TransferCosmosDb = "transfers";
-        private const string WebchatsCosmosDb = "webchats";
+        private const string WebChatsCosmosDb = "webchats";
 
         public CosmosDBService(CosmosClient cosmosClient, ILogger<CosmosDBService> logger)
         {
@@ -40,9 +40,9 @@ namespace NCS.DSS.DataUtility.Services
             var contactsTask = DeleteDocumentFromContainer(customerId, ContactCosmosDb, ContactCosmosDb);
             var employmentProgressionTask = DeleteDocumentFromContainer(customerId, EmploymentProgressionCosmosDb, EmploymentProgressionCosmosDb);
             var goalsTask = DeleteDocumentFromContainer(customerId, GoalsCosmosDb, GoalsCosmosDb);
-            var webchatsTask = DeleteDocumentFromContainer(customerId, WebchatsCosmosDb, WebchatsCosmosDb);
+            var webChatsTask = DeleteDocumentFromContainer(customerId, WebChatsCosmosDb, WebChatsCosmosDb);
             var digitalIdentityTask = DeleteDocumentFromContainer(customerId, DigitalIdentityCosmosDb, DigitalIdentityCosmosDb);
-            var diverityDetailsTask = DeleteDocumentFromContainer(customerId, DiversityDetailsCosmosDb, DiversityDetailsCosmosDb);
+            var diversityDetailsTask = DeleteDocumentFromContainer(customerId, DiversityDetailsCosmosDb, DiversityDetailsCosmosDb);
             var learningProgressionsTask = DeleteDocumentFromContainer(customerId, LearningProgressionCosmosDb, LearningProgressionCosmosDb);
             var outcomesTask = DeleteDocumentFromContainer(customerId, OutcomesCosmosDb, OutcomesCosmosDb);
             var sessionsTask = DeleteDocumentFromContainer(customerId, SessionCosmosDb, SessionCosmosDb);
@@ -50,7 +50,7 @@ namespace NCS.DSS.DataUtility.Services
             var transfersTask = DeleteDocumentFromContainer(customerId, TransferCosmosDb, TransferCosmosDb);
 
             await Task.WhenAll(actionPlansTask, actionsTask, addressesTask, contactsTask, employmentProgressionTask,
-                goalsTask, webchatsTask, digitalIdentityTask, diverityDetailsTask, learningProgressionsTask,
+                goalsTask, webChatsTask, digitalIdentityTask, diversityDetailsTask, learningProgressionsTask,
                 outcomesTask, sessionsTask, subscriptionsTask, transfersTask);
 
             await DeleteDocumentFromContainer(customerId, CustomerCosmosDb, CustomerCosmosDb);
