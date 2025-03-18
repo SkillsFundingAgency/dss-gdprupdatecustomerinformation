@@ -10,11 +10,11 @@ namespace NCS.DSS.DataUtility.Services
         private readonly string _GDPRIdentifyCustomersStoredProcedureName = Environment.GetEnvironmentVariable("GDPRIdentifyCustomersStoredProcedureName");
         private readonly string _sqlConnectionString = Environment.GetEnvironmentVariable("AzureSQLConnectionString");
 
-        private readonly ILogger<IIdentifyAndAnonymiseDataService> _logger;
+        private readonly ILogger<IdentifyAndAnonymiseDataService> _logger;
         private readonly ICosmosDBService _cosmosDBService;
         private readonly SqlConnection _sqlConnection;
 
-        public IdentifyAndAnonymiseDataService(ICosmosDBService cosmosDBService, ILogger<IIdentifyAndAnonymiseDataService> logger)
+        public IdentifyAndAnonymiseDataService(ICosmosDBService cosmosDBService, ILogger<IdentifyAndAnonymiseDataService> logger)
         {
             _cosmosDBService = cosmosDBService;
             _logger = logger;
@@ -56,7 +56,7 @@ namespace NCS.DSS.DataUtility.Services
 
                 List<Guid> idList = new List<Guid>();
 
-                while (reader.Read())
+                while (await reader.ReadAsync())
                 {
                     var id = Guid.Parse(reader["ID"].ToString());
                     idList.Add(id);
@@ -81,7 +81,7 @@ namespace NCS.DSS.DataUtility.Services
         {
             await using var command = new SqlCommand(_GDPRUpdateCustomersStoredProcedureName, _sqlConnection);
             command.CommandType = CommandType.StoredProcedure;
-
+            command.CommandTimeout = TimeSpan.FromMinutes(30).Seconds;
             try
             {
                 _logger.LogInformation("Opening the database connection");
