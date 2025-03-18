@@ -43,13 +43,13 @@ namespace NCS.DSS.DataUtility.Function
 
                 _logger.LogInformation("{Count} customer ID(s) have been identified as being non-compliant with GDPR", customerIds.Count.ToString());
 
-                _logger.LogInformation("Attempting to anonymise data in SQL DB");
-                await _identifyAndAnonymiseDataService.AnonymiseData();
-                _logger.LogInformation("Successfully anonymised data in SQL DB");
-
                 _logger.LogInformation("Attempting to delete documents in CosmosDB");
                 await _identifyAndAnonymiseDataService.DeleteCustomersFromCosmos(customerIds);
                 _logger.LogInformation("Successfully deleted documents in CosmosDB");
+
+                _logger.LogInformation("Attempting to anonymise data in SQL DB");
+                await _identifyAndAnonymiseDataService.AnonymiseData();
+                _logger.LogInformation("Successfully anonymised data in SQL DB");
 
                 _logger.LogInformation("{FunctionName} has finished invoking successfully", functionName);
 
