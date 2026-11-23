@@ -3,5 +3,6 @@
     public class DeleteCustomerQueueMessage
     {
         public Guid CustomerId;
+        public int TargetYear;
     }
 }

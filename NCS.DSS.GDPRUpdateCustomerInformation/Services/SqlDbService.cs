@@ -16,7 +16,8 @@ namespace NCS.DSS.DataUtility.Services
             _logger = logger;
         }
 
-        public async Task<List<Guid>> RetrieveCustomerIdsAsync()
+
+        public async Task<List<Guid>> RetrieveCustomerIdsAsync(int targetYear)
         {
             _logger.LogInformation($"{nameof(SqlDbService)} method '{nameof(RetrieveCustomerIdsAsync)}' has been called");
 
@@ -29,10 +30,12 @@ namespace NCS.DSS.DataUtility.Services
                     CommandType = CommandType.StoredProcedure
                 };
 
+                command.Parameters.Add("@TargetYear", SqlDbType.Int).Value = targetYear;
+
                 _logger.LogInformation("Opening SQL DB connection");
                 await command.Connection.OpenAsync();
 
-                _logger.LogInformation("Executing stored proc");
+                _logger.LogInformation("Executing stored proc '{_identifyCustomerStoredProcName}'", _identifyCustomerStoredProcName);
                 SqlDataReader reader = await command.ExecuteReaderAsync();
 
                 while (reader.Read())

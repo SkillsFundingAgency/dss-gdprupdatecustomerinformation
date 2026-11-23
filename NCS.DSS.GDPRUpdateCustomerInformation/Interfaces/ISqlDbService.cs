@@ -2,7 +2,7 @@
 {
     public interface ISqlDbService
     {
-        Task<List<Guid>> RetrieveCustomerIdsAsync();
+        Task<List<Guid>> RetrieveCustomerIdsAsync(int targetYear);
 
         Task<int> PurgeDataItemsForCustomerAsync(Guid customerId);
 
