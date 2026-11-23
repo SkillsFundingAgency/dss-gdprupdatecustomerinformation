@@ -1,5 +1,6 @@
 using FakeItEasy;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using NCS.DSS.DataUtility.Functions;
 using NCS.DSS.DataUtility.Interfaces;
@@ -13,6 +14,9 @@ namespace NCS.DSS.DataUtility.Tests
         private readonly IServiceBusService _mockedServiceBusService;
         private readonly ILogger<RetrieveCustomersToBeDeleted> _mockedRetrievalFunctionLogger;
         private readonly RetrieveCustomersToBeDeleted _mockedRetrievalFunction;
+        private readonly HttpRequestData _mockHttpRequestData;
+
+        private const int TargetYear = 2025;
 
         public GDPRUtilityTests()
         {
@@ -20,18 +24,19 @@ namespace NCS.DSS.DataUtility.Tests
             _mockedServiceBusService = A.Fake<IServiceBusService>();
             _mockedRetrievalFunctionLogger = A.Fake<ILogger<RetrieveCustomersToBeDeleted>>();
             _mockedRetrievalFunction = new RetrieveCustomersToBeDeleted(_mockedRetrievalFunctionLogger, _mockedSqlDbService, _mockedServiceBusService);
+            _mockHttpRequestData = A.Fake<HttpRequestData>();
         }
 
         [Fact]
         public async Task Run_NoCustomers_NoOperationsPerformed()
         {
             // Arrange
-            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync()).Returns(Task.FromResult(new List<Guid>()));
+            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync(TargetYear)).Returns(Task.FromResult(new List<Guid>()));
             var timerInfo = new TimerInfo();
             Guid customerId = Guid.NewGuid();
 
             // Act
-            await _mockedRetrievalFunction.Run(timerInfo);
+            await _mockedRetrievalFunction.Run(_mockHttpRequestData);
 
             // Assert
             A.CallTo(() => _mockedServiceBusService.SendQueueMessageAsync(A<DeleteCustomerQueueMessage>._, null)).MustNotHaveHappened();
@@ -47,11 +52,11 @@ namespace NCS.DSS.DataUtility.Tests
         {
             // Arrange
             var customerId = new List<Guid> { Guid.NewGuid() };
-            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync()).Returns(Task.FromResult(customerId));
+            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync(TargetYear)).Returns(Task.FromResult(customerId));
             var timerInfo = new TimerInfo();
 
             // Act
-            await _mockedRetrievalFunction.Run(timerInfo);
+            await _mockedRetrievalFunction.Run(_mockHttpRequestData);
 
             // Assert
             A.CallTo(() => _mockedServiceBusService.SendQueueMessageAsync(A<DeleteCustomerQueueMessage>._, null)).MustHaveHappened(1, Times.Exactly);
@@ -59,7 +64,7 @@ namespace NCS.DSS.DataUtility.Tests
             A.CallTo(_mockedRetrievalFunctionLogger).Where(call =>
                 call.Method.Name == "Log"
                 && call.GetArgument<LogLevel>(0) == LogLevel.Information
-            ).MustHaveHappened(7, Times.Exactly);
+            ).MustHaveHappened(3, Times.Exactly);
         }
 
         [Fact]
@@ -67,11 +72,11 @@ namespace NCS.DSS.DataUtility.Tests
         {
             // Arrange
             var customerId = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
-            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync()).Returns(Task.FromResult(customerId));
+            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync(TargetYear)).Returns(Task.FromResult(customerId));
             var timerInfo = new TimerInfo();
 
             // Act
-            await _mockedRetrievalFunction.Run(timerInfo);
+            await _mockedRetrievalFunction.Run(_mockHttpRequestData);
 
             // Assert
             A.CallTo(() => _mockedServiceBusService.SendQueueMessageAsync(A<DeleteCustomerQueueMessage>._, null)).MustHaveHappened(3, Times.Exactly);
@@ -79,7 +84,7 @@ namespace NCS.DSS.DataUtility.Tests
             A.CallTo(_mockedRetrievalFunctionLogger).Where(call =>
                 call.Method.Name == "Log"
                 && call.GetArgument<LogLevel>(0) == LogLevel.Information
-            ).MustHaveHappened(7, Times.Exactly);
+            ).MustHaveHappened(3, Times.Exactly);
         }
     }
 }
