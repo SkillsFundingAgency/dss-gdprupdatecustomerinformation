@@ -14,6 +14,9 @@ namespace NCS.DSS.DataUtility.Functions
         private readonly ICosmosDatabaseService _cosmosDatabaseService;
         private readonly ISqlDbService _sqlDbService;
 
+        
+        private static int _ttl;
+
         public DeleteDSSData(ILogger<DeleteDSSData> logger, ICosmosDatabaseService cosmosDatabaseService, ISqlDbService sqlDbService)
         {
             _logger = logger;
@@ -31,20 +34,20 @@ namespace NCS.DSS.DataUtility.Functions
             _logger.LogInformation($"Function '{nameof(DeleteDSSData)}' has been invoked");
 
             // convert queue message into usage object
-            var bodyText = Encoding.UTF8.GetString(message.Body);
+            var bodyText = Encoding.UTF8.GetString(message.Body);           
 
-            switch (bodyText)
-            {
-                case string customer when bodyText.ToLower().Contains("customerid"):
-                    await DeleteCustomerData(message, messageActions, bodyText);
-                    break;
-                case string adviserdetail when bodyText.ToLower().Contains("adviserdetailid"):
-                    await DeleteAdviserDetailData(message, messageActions, bodyText);
-                    break;
-                case string collection when bodyText.ToLower().Contains("collectionid"):
-                    await DeleteCollectionData(message, messageActions, bodyText);
-                    break;
-            }
+            //switch (bodyText)
+            //{
+            //    case string customer when bodyText.ToLower().Contains("customerid"):
+            await DeleteCustomerData(message, messageActions, bodyText);
+            //        break;
+            //    case string adviserdetail when bodyText.ToLower().Contains("adviserdetailid"):
+            //        await DeleteAdviserDetailData(message, messageActions, bodyText);
+            //        break;
+            //    case string collection when bodyText.ToLower().Contains("collectionid"):
+            //        await DeleteCollectionData(message, messageActions, bodyText);
+            //        break;
+            //}
 
             _logger.LogInformation($"Function '{nameof(DeleteDSSData)}' has finished invocation");
         }
@@ -53,28 +56,34 @@ namespace NCS.DSS.DataUtility.Functions
         {
             DeleteCustomerQueueMessage queueBody = JsonConvert.DeserializeObject<DeleteCustomerQueueMessage>(bodyText);
 
-            _logger.LogInformation("Customer with ID '{CustomerId}' will now be processed", queueBody.CustomerId);
+            if (_ttl == 0)
+            {
+                _ttl = CalculateTtl(queueBody.TargetYear);
+            }
+
+            _logger.LogInformation("Customer with ID '{CustomerId}' will now be assigned a TTL of {TTL} seconds", queueBody.CustomerId, _ttl);
 
             try
             {
                 // PHASE 1 - DELETE DATA FROM COSMOS DB
+                // This now adds a ttl to documents in dss containers instead of deleting them.
                 var purgeResults = new Dictionary<string, (bool success, int count)>
                 {
-                    ["dss-actionplans"] = await _cosmosDatabaseService.PurgeActionPlansForCustomerAsync(queueBody.CustomerId),
-                    ["dss-actions"] = await _cosmosDatabaseService.PurgeActionsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-addresses"] = await _cosmosDatabaseService.PurgeAddressesForCustomerAsync(queueBody.CustomerId),
-                    ["dss-contacts"] = await _cosmosDatabaseService.PurgeContactDetailsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-diversitydetails"] = await _cosmosDatabaseService.PurgeDiversityDetailsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-employmentprogressions"] = await _cosmosDatabaseService.PurgeEmploymentProgressionsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-goals"] = await _cosmosDatabaseService.PurgeGoalsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-interactions"] = await _cosmosDatabaseService.PurgeInteractionsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-learningprogressions"] = await _cosmosDatabaseService.PurgeLearningProgressionsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-outcomes"] = await _cosmosDatabaseService.PurgeOutcomesForCustomerAsync(queueBody.CustomerId),
-                    ["dss-sessions"] = await _cosmosDatabaseService.PurgeSessionsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-subscriptions"] = await _cosmosDatabaseService.PurgeSubscriptionsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-transfers"] = await _cosmosDatabaseService.PurgeTransfersForCustomerAsync(queueBody.CustomerId),
-                    ["dss-webchats"] = await _cosmosDatabaseService.PurgeWebchatsForCustomerAsync(queueBody.CustomerId),
-                    ["dss-customers"] = await _cosmosDatabaseService.PurgeCustomerRecordAsync(queueBody.CustomerId)
+                    ["dss-actionplans"] = await _cosmosDatabaseService.PurgeActionPlansForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-actions"] = await _cosmosDatabaseService.PurgeActionsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-addresses"] = await _cosmosDatabaseService.PurgeAddressesForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-contacts"] = await _cosmosDatabaseService.PurgeContactDetailsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-diversitydetails"] = await _cosmosDatabaseService.PurgeDiversityDetailsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-employmentprogressions"] = await _cosmosDatabaseService.PurgeEmploymentProgressionsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-goals"] = await _cosmosDatabaseService.PurgeGoalsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-interactions"] = await _cosmosDatabaseService.PurgeInteractionsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-learningprogressions"] = await _cosmosDatabaseService.PurgeLearningProgressionsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-outcomes"] = await _cosmosDatabaseService.PurgeOutcomesForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-sessions"] = await _cosmosDatabaseService.PurgeSessionsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-subscriptions"] = await _cosmosDatabaseService.PurgeSubscriptionsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-transfers"] = await _cosmosDatabaseService.PurgeTransfersForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-webchats"] = await _cosmosDatabaseService.PurgeWebchatsForCustomerAsync(queueBody.CustomerId, _ttl),
+                    ["dss-customers"] = await _cosmosDatabaseService.PurgeCustomerRecordAsync(queueBody.CustomerId, _ttl)
                 };
 
                 var failedTables = purgeResults
@@ -89,16 +98,17 @@ namespace NCS.DSS.DataUtility.Functions
 
                 string successText = cosmosFailureHasOccurred ? "no" : "yes";
 
-                _logger.LogInformation(">> Cosmos DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
+                _logger.LogInformation(">> Cosmos DB patch (add ttl) outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
                 _logger.LogInformation("- Successfully processed? '{SuccessText}'", successText);
-                _logger.LogInformation(">> Documents deleted: '{TotalDocumentCount}' <<", totalDocumentCount);
+                _logger.LogInformation(">> Documents updated with TTL: '{TotalDocumentCount}' <<", totalDocumentCount);
 
                 // PHASE 2 - DELETE DATA FROM SQL DB
-                int recordCountSqlDbAllTables = await _sqlDbService.PurgeDataItemsForCustomerAsync(queueBody.CustomerId);
+                // **** Is this required anymore? ****
+                //int recordCountSqlDbAllTables = await _sqlDbService.PurgeDataItemsForCustomerAsync(queueBody.CustomerId);
 
-                _logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
-                _logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
-                _logger.LogInformation(">> Records deleted (data and history): {RecordCountSqlDbAllTables} <<", recordCountSqlDbAllTables);
+                //_logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
+                //_logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
+                //_logger.LogInformation(">> Records deleted (data and history): {RecordCountSqlDbAllTables} <<", recordCountSqlDbAllTables);
 
                 if (cosmosFailureHasOccurred)
                 {
@@ -106,19 +116,20 @@ namespace NCS.DSS.DataUtility.Functions
                         "Processing failure identified - moving originating message to dead letter queue. Customer ID: {CustomerId}. Tables: {FailedTables}"
                         , queueBody.CustomerId, failedTablesMessage
                     );
-                    await messageActions.DeadLetterMessageAsync(message, null, "Cosmos DB purge has failed for table(s):" + failedTablesMessage);
+                    await messageActions.DeadLetterMessageAsync(message, null, "Cosmos DB patch (add ttl) has failed for table(s):" + failedTablesMessage);
                 }
                 else
                 {
                     // PHASE 3 - DELETE CUSTOMER RECORD FROM SQL DB
-                    int recordCountSqlDbCustomerTable = await _sqlDbService.PurgeCustomerDataAsync(queueBody.CustomerId);
+                    // *** * Is this required anymore? ****
+                    //int recordCountSqlDbCustomerTable = await _sqlDbService.PurgeCustomerDataAsync(queueBody.CustomerId);
 
-                    _logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
-                    _logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
-                    _logger.LogInformation(">> Records deleted (customer): {RecordCountSqlDbCustomerTable} <<", recordCountSqlDbCustomerTable);
+                    //_logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
+                    //_logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
+                    //_logger.LogInformation(">> Records deleted (customer): {RecordCountSqlDbCustomerTable} <<", recordCountSqlDbCustomerTable);
 
-                    _logger.LogInformation("Processing succeeded - completing message");
-                    await messageActions.CompleteMessageAsync(message);
+                    //_logger.LogInformation("Processing succeeded - completing message");
+                    //await messageActions.CompleteMessageAsync(message);
                 }
             }
             catch (Exception ex)
@@ -134,6 +145,20 @@ namespace NCS.DSS.DataUtility.Functions
 
                 throw;
             }
+        }
+
+        private int CalculateTtl(int targetYear)
+        {
+            DateTime now = DateTime.UtcNow;
+            DateTime expiryDate = new DateTime(
+                targetYear, 4, 6, 0, 0, 0, DateTimeKind.Utc);
+
+            if (now >= expiryDate)
+            {
+                return 1;
+            }
+
+            return (int)Math.Ceiling((expiryDate - now).TotalSeconds);
         }
 
         public async Task DeleteAdviserDetailData(ServiceBusReceivedMessage message, ServiceBusMessageActions messageActions, string bodyText)
@@ -171,7 +196,7 @@ namespace NCS.DSS.DataUtility.Functions
                     await messageActions.CompleteMessageAsync(message);
                 }
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 _logger.LogError(
                     ex
@@ -184,7 +209,7 @@ namespace NCS.DSS.DataUtility.Functions
 
 
                 throw;
-            }      
+            }
         }
 
         public async Task DeleteCollectionData(ServiceBusReceivedMessage message, ServiceBusMessageActions messageActions, string bodyText)

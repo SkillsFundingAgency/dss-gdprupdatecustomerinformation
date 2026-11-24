@@ -20,13 +20,14 @@ namespace NCS.DSS.DataUtility.Tests
             _mockedServiceBusService = A.Fake<IServiceBusService>();
             _mockedRetrievalFunctionLogger = A.Fake<ILogger<RetrieveCustomersToBeDeleted>>();
             _mockedRetrievalFunction = new RetrieveCustomersToBeDeleted(_mockedRetrievalFunctionLogger, _mockedSqlDbService, _mockedServiceBusService);
+            Environment.SetEnvironmentVariable("TargetYear", "2026");
         }
 
         [Fact]
         public async Task Run_NoCustomers_NoOperationsPerformed()
         {
             // Arrange
-            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync()).Returns(Task.FromResult(new List<Guid>()));
+            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync(2026)).Returns(Task.FromResult(new List<Guid>()));
             var timerInfo = new TimerInfo();
             Guid customerId = Guid.NewGuid();
 
@@ -47,7 +48,7 @@ namespace NCS.DSS.DataUtility.Tests
         {
             // Arrange
             var customerId = new List<Guid> { Guid.NewGuid() };
-            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync()).Returns(Task.FromResult(customerId));
+            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync(2026)).Returns(Task.FromResult(customerId));
             var timerInfo = new TimerInfo();
 
             // Act
@@ -67,7 +68,7 @@ namespace NCS.DSS.DataUtility.Tests
         {
             // Arrange
             var customerId = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
-            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync()).Returns(Task.FromResult(customerId));
+            A.CallTo(() => _mockedSqlDbService.RetrieveCustomerIdsAsync(2026)).Returns(Task.FromResult(customerId));
             var timerInfo = new TimerInfo();
 
             // Act

@@ -72,6 +72,7 @@
         "ServiceBusConnectionString": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=ServiceBusConnectionString)', parameters('keyVaultName'))]",
         "GdprQueueName": "Gdpr.Deletecustomerdata",
         "GdprTimerSchedule": "0 19 6-8 * *",
+        "TargetYear": "2025",
 		"CosmosDbEndpoint": "[parameters('CosmosDbEndpoint')]"
       },
       "copy": {

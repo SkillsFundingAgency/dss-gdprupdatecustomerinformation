@@ -13,6 +13,9 @@ namespace NCS.DSS.DataUtility.Functions
 
         private static int _numberOfSuccesses;
         private static int _numberOfFailures;
+        private static string _financialYear;
+
+        private static readonly int[] TargetYears = { 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033 };
 
         public RetrieveCustomersToBeDeleted(ILogger<RetrieveCustomersToBeDeleted> logger, ISqlDbService sqlDbService, IServiceBusService serviceBusService)
         {
@@ -26,19 +29,34 @@ namespace NCS.DSS.DataUtility.Functions
         public async Task Run([TimerTrigger("%GdprTimerSchedule%")] TimerInfo timer)
         {
             _logger.LogInformation($"Function '{nameof(RetrieveCustomersToBeDeleted)}' has been invoked");
+            var targetYearValue = Environment.GetEnvironmentVariable("TargetYear");
+
+            if(!int.TryParse(targetYearValue, out int targetYear))
+            {
+                throw new InvalidOperationException("TargetYear environment variable is not set or is not a valid integer.");
+            }            
+                
+            if(!TargetYears.Contains(targetYear))
+            {
+                _logger.LogInformation("Invalid target year provided. Valid target years are: {ValidTargetYears}", string.Join(", ", TargetYears));
+                return;
+            }
+
+            _financialYear = GetFinancialYear(targetYear);
 
             try
             {
-                _logger.LogInformation("Retrieving list of customer IDs which require deletion");
-                List<Guid> customerIds = await _sqlDbService.RetrieveCustomerIdsAsync();
+                _logger.LogInformation("Retrieving customer IDs where the last interaction date was within the financial year '{FinancialYear}'", _financialYear);
+
+                List<Guid> customerIds = await _sqlDbService.RetrieveCustomerIdsAsync(targetYear);
 
                 if (customerIds.Count == 0)
                 {
-                    _logger.LogInformation("No customers to be deleted (data is already GDPR compliant)");
+                    _logger.LogInformation("No records found for the financial year '{FinancialYear}'", _financialYear);
                     return;
                 }
 
-                _logger.LogInformation("A total of '{CustomerIds}' customers have been identified as requiring deletion", customerIds.Count.ToString());
+                _logger.LogInformation("A total of '{CustomerIds}' customers have been identified for the financial year {FinancialYear} to have ttl assigned", customerIds.Count.ToString(), _financialYear);
 
                 _logger.LogInformation("Sending each customer ID onto a service bus queue for processing");
 
@@ -54,7 +72,8 @@ namespace NCS.DSS.DataUtility.Functions
                 {
                     DeleteCustomerQueueMessage message = new DeleteCustomerQueueMessage
                     {
-                        CustomerId = customerId
+                        CustomerId = customerId,
+                        TargetYear = targetYear
                     };
 
                     try
@@ -79,6 +98,15 @@ namespace NCS.DSS.DataUtility.Functions
             }
 
             _logger.LogInformation($"Function '{nameof(RetrieveCustomersToBeDeleted)}' has finished invocation");
+        }
+
+        private string GetFinancialYear(int targetYear)
+        {
+            if (targetYear > 0)
+            {
+                return $"{targetYear - 7}/{targetYear - 6}";
+            }
+            return "";
         }
     }
 }
