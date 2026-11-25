@@ -10,7 +10,7 @@ resources:
     type: github
     name: SkillsFundingAgency/dfc-devops
     ref: refs/tags/v1.16.6
-    endpoint: 'GitHub (CDH)'
+    endpoint: 'SkillsFundingAgency'
 
 pool:
   name: NCS - CI and CD
