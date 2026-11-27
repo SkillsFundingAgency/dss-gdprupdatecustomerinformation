@@ -103,12 +103,11 @@ namespace NCS.DSS.DataUtility.Functions
                 _logger.LogInformation(">> Documents updated with TTL: '{TotalDocumentCount}' <<", totalDocumentCount);
 
                 // PHASE 2 - DELETE DATA FROM SQL DB
-                // **** Is this required anymore? ****
-                //int recordCountSqlDbAllTables = await _sqlDbService.PurgeDataItemsForCustomerAsync(queueBody.CustomerId);
+                int recordCountSqlDbAllTables = await _sqlDbService.PurgeDataItemsForCustomerAsync(queueBody.CustomerId);
 
-                //_logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
-                //_logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
-                //_logger.LogInformation(">> Records deleted (data and history): {RecordCountSqlDbAllTables} <<", recordCountSqlDbAllTables);
+                _logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
+                _logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
+                _logger.LogInformation(">> Records deleted (data and history): {RecordCountSqlDbAllTables} <<", recordCountSqlDbAllTables);
 
                 if (cosmosFailureHasOccurred)
                 {
@@ -121,15 +120,14 @@ namespace NCS.DSS.DataUtility.Functions
                 else
                 {
                     // PHASE 3 - DELETE CUSTOMER RECORD FROM SQL DB
-                    // *** * Is this required anymore? ****
-                    //int recordCountSqlDbCustomerTable = await _sqlDbService.PurgeCustomerDataAsync(queueBody.CustomerId);
+                    int recordCountSqlDbCustomerTable = await _sqlDbService.PurgeCustomerDataAsync(queueBody.CustomerId);
 
-                    //_logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
-                    //_logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
-                    //_logger.LogInformation(">> Records deleted (customer): {RecordCountSqlDbCustomerTable} <<", recordCountSqlDbCustomerTable);
+                    _logger.LogInformation(">> SQL DB purge outcome for customer '{CustomerId}' <<", queueBody.CustomerId);
+                    _logger.LogInformation("- Successfully processed? 'yes'"); // exception would be thrown if not successful
+                    _logger.LogInformation(">> Records deleted (customer): {RecordCountSqlDbCustomerTable} <<", recordCountSqlDbCustomerTable);
 
-                    //_logger.LogInformation("Processing succeeded - completing message");
-                    //await messageActions.CompleteMessageAsync(message);
+                    _logger.LogInformation("Processing succeeded - completing message");
+                    await messageActions.CompleteMessageAsync(message);
                 }
             }
             catch (Exception ex)
